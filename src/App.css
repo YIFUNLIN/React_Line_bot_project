@@ -1,0 +1,195 @@
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* 讓 body 撐滿整個視窗高度 */
+  margin: 0;
+  background: linear-gradient(45deg, #2193b0, #6dd5ed);
+  font-family: "Microsoft JhengHei", sans-serif;
+  padding: 15px; /* 添加一些邊距 */
+  box-sizing: border-box;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 60px; /* 增加內距 */
+  border-radius: 15px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+  width: 140%; /* 讓寬度自動調整 */
+  max-width: 500px; /* 增加最大寬度 */
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo svg {
+  margin-bottom: 15px;
+}
+
+.login-box,
+.email-login-box,
+.email-register-box,
+.profile-box {
+  background-color: rgb(224, 230, 234);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  width: 100%;
+  max-width: 400px;
+  box-sizing: border-box;
+}
+
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: bold;
+}
+
+.btn-login {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.btn-register {
+  background-color: #2196F3;
+  color: white;
+}
+
+.btn-line {
+  background-color: #00C300;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-long {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.profile-box {
+  text-align: center;
+}
+
+.profile-picture {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 15px;
+}
+
+/* 響應式設計 */
+@media screen and (max-width: 968px) {
+  .login-container {
+    width: 100%;
+    padding: 40px; /* 增加內距 */
+    max-width: 450px; /* 增加最大寬度 */
+  }
+
+  .login-box,
+  .email-login-box,
+  .email-register-box,
+  .profile-box {
+    width: 100%;
+    max-width: 100%;
+    padding: 15px;
+  }
+
+  .button-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .login-container {
+    transform: scale(1.2); /* 調整放大倍率，需放多大可以自行調整 */
+    transform-origin: center center; /* 放大後仍保持中心位置 */
+  }
+
+  .login-box,
+  .email-login-box,
+  .email-register-box,
+  .profile-box {
+    max-width: 100%;
+    padding: 20px;
+  }
+
+  .button-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .logo svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .logo h1 {
+    font-size: 1.5rem;
+  }
+
+  .logo p {
+    font-size: 0.9rem;
+  }
+
+  .form-group input {
+    font-size: 14px;
+  }
+}
+
+/* 表單按鈕間距 */
+.email-login-box form,
+.email-register-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.email-login-box .btn,
+.email-register-box .btn {
+  margin-top: 10px;
+}
