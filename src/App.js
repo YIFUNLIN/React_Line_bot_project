@@ -4,59 +4,155 @@ import axios from "axios";
 import "./App.css";
 
 function App() {
-  const [profile, setProfile] = useState(null); // Line 使用者資料
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Line 登入狀態
-  const [isEmailRegister, setIsEmailRegister] = useState(false); // 是否選擇 Email 註冊
-  const [isEmailLogin, setIsEmailLogin] = useState(false); // 是否選擇 Email 登入
-  const [email, setEmail] = useState(""); // Email
-  const [password, setPassword] = useState(""); // Password
+  const [profile, setProfile] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isEmailRegister, setIsEmailRegister] = useState(false);
+  const [isEmailLogin, setIsEmailLogin] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLiffInitialized, setIsLiffInitialized] = useState(false);
+  
 
   const LIFF_URL = "https://liff.line.me/2006664266-zXG3xyNe";
+  const API_BASE_URL = "https://f228-2401-e180-8c80-26eb-40dc-fad1-3696-8285.ngrok-free.app";
 
   useEffect(() => {
-    liff
-      .init({ liffId: "2006664266-zXG3xyNe" })
-      .then(() => {
-        console.log("LIFF 初始化成功");
-      })
-      .catch((err) => console.error("LIFF 初始化失敗", err));
+    initializeLiff();
   }, []);
 
-  const handleLineLogin = async () => {
+  const initializeLiff = async () => {
     try {
-      if (!liff.isLoggedIn()) {
-        await liff.login();
-      }
-      const profile = await liff.getProfile();
-      setProfile(profile);
-      setIsLoggedIn(true);
-
-      const userData = {
-        name: profile.displayName,
-        userId: profile.userId,
-        pictureUrl: profile.pictureUrl,
-        loginType: "LINE",
-      };
-      await axios.post("https://3a76-2401-e180-8c60-2501-7cae-12fa-2f97-a32e.ngrok-free.app/api/save_user", userData);
-      alert("Line 使用者資料已儲存！");
-      // 若登入後也需要直接導向 LIFF 頁面，可在此加入
-      // window.location.href = LIFF_URL;
+      // await: 確保每個非同步操作完成後再執行下一步
+      await liff.init({ liffId: "2006664266-zXG3xyNe" }); // 等待liff.init 初始化完成，保證後續程式碼只在 LIFF 成功初始化後執行，如果初始化失敗，會跳到 catch 區塊執行錯誤處理
+      setIsLiffInitialized(true);  // 使用React Hook 更新初始化狀態，改為 True
+      
+      if (liff.isLoggedIn()) {  // 檢查此用戶是否已登入LINE
+        const userProfile = await liff.getProfile();  // 若登入，抓取個人資料
+        if (userProfile){
+          setProfile(userProfile); // 將用戶資料儲存在 profile 狀態中
+          setIsLoggedIn(true); // 標記用戶已登入
+          await sendUserDataToBackend(userProfile); // 呼叫函數，將用戶資料發送到後端
+        }else{
+          console.error("無法獲取用戶資訊");
+          await showMessage("登入失敗：無法獲取用戶資訊");
+        }
+    }
     } catch (err) {
-      console.error("Line 登入失敗", err);
+      console.error("LIFF 初始化失敗", err);
+      await showMessage("初始化失敗，請稍後再試");
     }
   };
 
+  const showMessage = async (message) => {
+    if (liff.isInClient()) {
+      try {
+        await liff.sendMessages([{
+          type: 'text',
+          text: message
+        }]);
+      } catch (error) {
+        console.error("發送訊息失敗:", error);
+      }
+    } else {
+      alert(message);
+    }
+  };
+  const sendUserDataToBackend = async (userProfile) => {
+    if (!liff.isLoggedIn()) {
+      console.error("尚未登入");
+      await showMessage("登入失敗：無法獲取用戶資訊");
+      return;
+    }
+  
+    try {
+      const userData = {
+        userId: userProfile.userId,
+        name: userProfile.displayName,
+        pictureUrl: userProfile.pictureUrl,
+        loginType: "LINE"
+      };
+  
+      console.log("Sending user data to backend:", userData); // 新增日誌
+  
+      const response = await axios.post(
+        `${API_BASE_URL}/api/save_user`,
+        userData,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      // 處理響應
+      if (response.status === 201 || response.status === 200) {
+        console.log("用戶資料儲存成功:", response.data);
+        await showMessage("登入成功！");
+      } else {
+        console.error("儲存用戶資料失敗:", response.status);
+        throw new Error("儲存用戶資料失敗");
+      }
+  
+    } catch (error) {
+      console.error("儲存用戶資料失敗:", error);
+      const errorMessage = error.response?.data?.error || "儲存資料失敗，請稍後再試";
+      await showMessage(errorMessage);
+      throw error; // 將錯誤往上拋出，讓呼叫方知道發生錯誤
+    }
+  };
+
+  const handleLineLogin = async () => {
+    if (!isLiffInitialized) {
+      await showMessage("系統初始化中，請稍後再試");
+      return;
+    }
+
+    try {
+      if (!liff.isLoggedIn()) {
+        await liff.login();
+      } else {
+        const userProfile = await liff.getProfile();
+        setProfile(userProfile);
+        setIsLoggedIn(true);
+        await sendUserDataToBackend(userProfile);
+      }
+    } catch (error) {
+      console.error("登入失敗:", error);
+      await showMessage("登入失敗，請稍後再試");
+    }
+  };
+
+  
   const handleEmailRegister = async (e) => {
     e.preventDefault();
     if (email && password) {
       try {
-        const userData = { email, password, loginType: "EMAIL" };
-        await axios.post("https://3a76-2401-e180-8c60-2501-7cae-12fa-2f97-a32e.ngrok-free.app/api/save_user", userData);
-        alert("註冊成功！");
-        setIsEmailRegister(false);
+        const userData = {
+          email,
+          password,
+          loginType: "EMAIL"
+        };
+
+        const response = await axios.post(
+          `${API_BASE_URL}/api/save_user`,
+          userData,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        if (response.status === 201) {
+          alert("註冊成功！");
+          setIsEmailRegister(false);
+        } else if (response.status === 200 && response.data.message === "用戶已存在") {
+          alert("此 Email 已經註冊過了！");
+        }
       } catch (err) {
         console.error("註冊失敗", err);
-        alert("註冊失敗，請稍後再試！");
+        const errorMessage = err.response?.data?.error || "註冊失敗，請稍後再試！";
+        alert(errorMessage);
       }
     } else {
       alert("請輸入有效的 Email 和密碼！");
@@ -67,17 +163,31 @@ function App() {
     e.preventDefault();
     if (email && password) {
       try {
-        const userData = { email, password, loginType: "EMAIL" };
-        const response = await axios.post("https://3a76-2401-e180-8c60-2501-7cae-12fa-2f97-a32e.ngrok-free.app/api/login", userData);
+        const userData = {
+          email,
+          password,
+          loginType: "EMAIL"
+        };
+
+        const response = await axios.post(
+          `${API_BASE_URL}/api/login`,
+          userData,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
         if (response.status === 200) {
           alert("登入成功！");
           setIsEmailLogin(false);
-          // 登入成功後導回 LIFF 頁面
           window.location.href = LIFF_URL;
         }
       } catch (err) {
         console.error("登入失敗", err);
-        alert("登入失敗，請確認您的帳號密碼！");
+        const errorMessage = err.response?.data?.error || "登入失敗，請確認您的帳號密碼！";
+        alert(errorMessage);
       }
     } else {
       alert("請輸入有效的 Email 和密碼！");
